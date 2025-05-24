@@ -1,22 +1,26 @@
-`timescale 1ns / 1ps
+// Define a module named "dff" with an interface "dff_if"
 
-module d_ff ( d_ff_if vif );
+module d_ff (d_ff_if vif);
 
-    always@(posedge vif.clk) 
-        begin
-            if(vif.rst == 1'b1)
-                vif.dout <= 1'b0;
-            else
-                vif.dout <= vif.din;
-        end
-
+  // Always block triggered on the positive edge of the clock signal
+  always @(posedge vif.clk)
+    begin
+      // Check if the reset signal is asserted
+      if (vif.rst == 1'b1)
+        // If reset is active, set the output to 0
+        vif.dout <= 1'b0;
+      else
+        // If reset is not active, pass the input value to the output
+        vif.dout <= vif.din;
+    end
+  
 endmodule
 
-interface d_ff_if(
-    input logic clk,
-    input logic rst,
-    input logic din,
-    output logic dout
-);
-
+// Define an interface "dff_if" with the following signals
+interface d_ff_if;
+  logic clk;   // Clock signal
+  logic rst;   // Reset signal
+  logic din;   // Data input
+  logic dout;  // Data output
+  
 endinterface
