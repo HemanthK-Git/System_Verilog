@@ -1,47 +1,68 @@
-`timescale 1ns / 1ps
 
-module fifo(
-    input clk,rst,wr,rd,
-    input [7:0] din,
-    output reg [7:0] dout,
-    output full,empty
-    );
-    
-    reg [3:0] wptr = 0, rptr = 0;
-    reg [4:0] counter = 0;
-    reg [7:0] mem [15:0] ;
+module fifo(input clk, rst, wr, rd,
+            input [7:0] din, output reg [7:0] dout,
+            output empty, full);
+  
+  // Pointers for write and read operations
+  reg [3:0] wptr = 0, rptr = 0;
+  
+  // Counter for tracking the number of elements in the FIFO
+  reg [4:0] cnt = 0;
+  
+  // Memory array to store data
+  reg [7:0] mem [15:0];
 
-    always @(posedge clk) begin
-        if(rst == 1'b1) begin
-            dout <= 8'd0;
-            wptr <= 4'd0;
-            rptr <= 4'd0;
-            counter <= 5'd0;
+  always @(posedge clk)
+    begin
+      if (rst == 1'b1)
+        begin
+          // Reset the pointers and counter when the reset signal is asserted
+          wptr <= 0;
+          rptr <= 0;
+          cnt  <= 0;
         end
-            else if (wr && !full) begin
-                    mem[wptr] <= din;
-                    wptr <= wptr + 1;
-                    counter <= counter + 1;
-                 end
-                    else if (rd && !empty) begin
-                            dout <= mem[rptr];
-                            rptr <= rptr + 1;
-                            counter <= counter - 1;
-                         end
+      else if (wr && !full)
+        begin
+          // Write data to the FIFO if it's not full
+          mem[wptr] <= din;
+          wptr      <= wptr + 1;
+          cnt       <= cnt + 1;
+        end
+      else if (rd && !empty)
+        begin
+          // Read data from the FIFO if it's not empty
+          dout <= mem[rptr];
+          rptr <= rptr + 1;
+          cnt  <= cnt - 1;
+        end
     end
 
-    assign empty = (counter == 1'b0) ? 1'b1 : 1'b0;
-    assign full = (counter == 5'd16) ? 1'b1 : 1'b0;
+  // Determine if the FIFO is empty or full
+  assign empty = (cnt == 0) ? 1'b1 : 1'b0;
+  assign full  = (cnt == 16) ? 1'b1 : 1'b0;
 
 endmodule
 
-interface fifo_if(
-    logic clk,rst,wr,rd,
-    logic [7:0] din,
-    logic [7:0] dout,
-    logic full,empty
-);
+//////////////////////////////////////
 
+// Define an interface for the FIFO
+interface fifo_if;
+  
+  logic clock, rd, wr;         // Clock, read, and write signals
+  logic full, empty;           // Flags indicating FIFO status
+  logic [7:0] data_in;         // Data input
+  logic [7:0] data_out;        // Data output
+  logic rst;                   // Reset signal
+
+  modport drv_mp (
+        input clock,
+        output rst, wr, rd, data_in,
+        input data_out, full, empty
+    );
+
+    modport mon_mp (
+        input clock, rst, wr, rd, data_in,
+        output data_out, full, empty
+    );
+  
 endinterface
-
-
